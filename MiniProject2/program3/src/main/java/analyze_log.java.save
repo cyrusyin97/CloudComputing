@@ -1,0 +1,36 @@
+import org.apache.spark.sql.Column;
+import org.apache.spark.sql.Dataset;
+import org.apache.spark.sql.Row;
+import org.apache.spark.SparkConf;
+import org.apache.spark.sql.functions;
+import org.apache.spark.api.java.JavaSparkContext;
+import org.apache.spark.sql.SparkSession;
+import org.apache.spark.sql.RelationalGroupedDataset;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import org.apache.spark.sql.RowFactory;
+import org.apache.spark.api.java.function.ForeachFunction;
+
+public class analyze_log {
+    public static void main(String[] args) {
+        SparkConf conf = new SparkConf().setMaster("local").setAppName("Access Log");
+        String logFile = "access_log"; // Should be some file on your system
+        SparkSession spark = SparkSession.builder().config(conf).getOrCreate();
+
+	Dataset<Row> dataFile = spark.read().format("csv").option("sep", " ").option("inferSchema", "true").load(logFile);
+
+        Dataset<Row> timestamp = dataFile.groupBy(dataFile.col("_c3").substr(5,8)).count();
+	Dataset<Row> r = timestamp.withColumnRenamed("substring(_c3, 5, 8)", "Date");
+
+	//SimpleDateFormat formatter=new SimpleDateFormat("MMM/yyyy");
+	Dataset<Row> n = r.filter(r.col("Date").endsWith("9").or(r.col("Date").endsWith("0").or(r.col("Date").endsWith("1"))));
+
+	Dataset<Row> n2 = n.selectExpr("split(Date, '/')[0] as Month", "split(Date, '/')[1] as Year", "count");
+
+	Dataset<Row> n3 = n2.withColumn
+
+        n2.write().csv("part3_1_3.csv");
+        spark.stop();
+    }
+}
+
